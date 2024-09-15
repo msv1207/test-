@@ -8,22 +8,18 @@ use App\Services\Movie\Adapter\BazAdapter;
 
 class MovieService
 {
-    public function __construct(readonly MovieCacheManager $cacheManager)
+    public const MOVIE_ADAPTERS = [FooAdapter::class, BarAdapter::class, BazAdapter::class];
+
+    public function __construct(readonly MovieTitleCacheService $cacheManager)
     {
     }
 
     public function getTitles(): array
     {
-        $adapters = [
-            app(FooAdapter::class),
-            app(BarAdapter::class),
-            app(BazAdapter::class)
-        ];
-
         $titles = [];
 
-        foreach ($adapters as $adapter) {
-            $this->cacheManager->setAdapter($adapter);
+        foreach (self::MOVIE_ADAPTERS as $adapter) {
+            $this->cacheManager->setAdapter(app($adapter));
 
             $titles = array_merge($titles, $this->cacheManager->getTitles());
         }

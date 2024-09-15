@@ -4,12 +4,11 @@ namespace App\Services\Movie;
 
 use Illuminate\Cache\CacheManager;
 use App\Services\Movie\Adapter\AdapterInterface;
-use External\Bar\Exceptions\ServiceUnavailableException;
 
-class MovieCacheManager
+class MovieTitleCacheService
 {
     private AdapterInterface $adapter;
-    private const UPDATE_TITLES_CACHE = 60 * 60 * 1000; // 60 min
+    private const UPDATE_TITLES_CACHE = 20 * 60 * 1000; // 20 min
     public function __construct(readonly CacheManager $cacheManager)
     {
 
@@ -24,14 +23,16 @@ class MovieCacheManager
     {
         $titles = $this->cacheManager->get(get_class($this->adapter)) ?? [];
 
+        // to avoid service Unavailable i added functional to update cache
+        // but if server will be Unavailable we can use previous response
         if (time() - ($titles['time'] ?? 0) > self::UPDATE_TITLES_CACHE) {
             try {
                 $titles = $this->adapter->getData();
                 $this->setTitles($titles);
-            } catch (ServiceUnavailableException $exception) {
+            } catch (\Exception $exception) {
                 logger($exception);
 
-                if ($titles = []) {
+                if ($titles === []) {
                     throw new NotStoredAndUnavailableException();
                 }
             }
